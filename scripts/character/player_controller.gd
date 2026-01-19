@@ -5,6 +5,7 @@ enum Facing{LEFT, RIGHT}
 var horizontal_input: float = 0.0
 
 var _facing: Facing = Facing.RIGHT
+var _gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var state_machine = $StateMachine
@@ -14,12 +15,16 @@ var _facing: Facing = Facing.RIGHT
 @onready var l_arm_sprite_2d: Sprite2D = $l_arm/Sprite2D
 
 func _ready() -> void:
-	var states: Array[State] = [PlayerIdleState.new(self), PlayerMovementState.new(self)]
+	var states: Array[State] = [PlayerIdleState.new(self), PlayerMovementState.new(self), PlayerJumpState.new(self)]
 	state_machine.start_machine(states)
 
 
 func _physics_process(delta: float) -> void:
 	horizontal_input = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+	
+	if not is_on_floor():
+		velocity.y += _gravity * delta
+	
 	move_and_slide()
 	
 
