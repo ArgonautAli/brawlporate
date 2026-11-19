@@ -1,60 +1,76 @@
-class_name StateMachine extends Node
+class_name StateMachine
+extends Node
 
-var current_state: State
-var states: Dictionary = {}
-var parent_node_name: String
-
+@export var initial_state: NodePath = ^"Idle"
 @export var is_logging: bool = false
 
-func start_machine(init_states: Array[State]) -> void:
-	for state in init_states:
-		state.state_machine = self
-		states[state.get_state_name()] = state
-		
-	current_state = init_states[0]
-	parent_node_name = get_parent().name
-	
-	if is_logging:
-		print("[%s] Entering state: \"%s\"" % [
-			parent_node_name,
-			current_state.get_state_name()
-		])
-		
+var current_state: State
+
+var _states: Dictionary = {}
+var _started: bool = false
+var _owner_name: String = ""
+
+
+func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
+	_owner_name = get_parent().name if get_parent() else name
+	for child in get_children():
+		if child is State:
+			var state := child as State
+			state.state_machine = self
+			_states[StringName(state.name)] = state
+
+
+func start() -> void:
+	if _started:
+		return
+	current_state = _resolve_initial_state()
+	if current_state == null:
+		push_error("StateMachine '%s' has no initial_state." % name)
+		return
+	_started = true
+	_log("Entering", current_state)
 	current_state.enter()
 
 
-func _process(delta: float) -> void:
-	current_state.process(delta)
-	
+func _resolve_initial_state() -> State:
+	if not initial_state.is_empty():
+		var node := get_node_or_null(initial_state)
+		if node is State:
+			return node as State
+	if _states.has(&"Idle"):
+		return _states[&"Idle"]
+	if not _states.is_empty():
+		return _states.values()[0]
+	return null
 
-func _physics_process(delta: float) -> void:
-	current_state.physics_process(delta)
 
-func transition(new_state_name: String) -> void:
-	var new_state: State = states.get(new_state_name)
+func physics_tick(delta: float) -> void:
+	if current_state:
+		current_state.physics_process(delta)
 
+
+func physics_tick_after_move() -> void:
+	if current_state:
+		current_state.physics_process_after_move()
+
+
+func transition(state_name: StringName) -> void:
+	var new_state: State = _states.get(state_name)
 	if new_state == null:
-		push_error("Non-existent state: %s" % new_state_name)
+		push_error("Non-existent state: %s" % state_name)
 		return
-
 	if new_state == current_state:
 		return
-
-	if is_logging:
-		print("[%s] Exiting state: \"%s\"" % [
-			parent_node_name,
-			current_state.get_state_name()
-		])
-
-	current_state.exit()
+	if current_state:
+		_log("Exiting", current_state)
+		current_state.exit()
 	current_state = new_state
-
-	if is_logging:
-		print("[%s] Entering state: \"%s\"" % [
-			parent_node_name,
-			current_state.get_state_name()
-		])
-
+	_log("Entering", current_state)
 	current_state.enter()
 
-	
+
+func _log(action: String, state: State) -> void:
+	if is_logging and state:
+		print("[%s] %s state: \"%s\"" % [_owner_name, action, state.name])
