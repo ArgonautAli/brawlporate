@@ -2,7 +2,7 @@ extends PlayerState
 
 
 func enter() -> void:
-	player.play_animation(&"idle")
+	player.play_animation(&"running")
 
 
 func physics_process(_delta: float) -> void:

@@ -1,11 +1,8 @@
-[gd_resource type="Resource" script_class="PlayerStats" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlayerStats" format=3 uid="uid://dv07t4wo3yipg"]
 
-[ext_resource type="Script" path="res://scripts/character/player_stats.gd" id="1_stats"]
+[ext_resource type="Script" uid="uid://nw51c37i0v4j" path="res://scripts/character/player_stats.gd" id="1_stats"]
 
 [resource]
 script = ExtResource("1_stats")
-max_speed = 150.0
-move_acceleration = 20.0
-jump_force = 350.0
-air_acceleration = 20.0
-air_stop_force = 5.0
+max_speed = 250.0
+move_acceleration = 40.0
